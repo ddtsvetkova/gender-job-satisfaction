@@ -12,6 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 # Activating libraries
 
 #install.packages("haven", "stringr", "dplyr", "writexl", "labelled", "readxl")
+library(tibble)
+# library(tidyverse)
 library(haven)
 library(stringr)
 library(dplyr)
@@ -56,7 +58,7 @@ get_letter <- function(x) {year = get_year(x)
 
 for (filename in c("raw2017", "raw2018", "raw2019", "raw2020")) {
   
-    assign(paste0("data", get_year(filename)), # output dataframe is data[year]
+    assign(paste0("join", get_year(filename)), # output dataframe is data[year]
           
           merge(x = get(paste0("raw", get_year(filename))), # merging raw[year] with hh[year] 
                 y = get(paste0("hh", get_year(filename))), 
@@ -77,7 +79,9 @@ for (filename in c("raw2017", "raw2018", "raw2019", "raw2020")) {
 varname = c("_origsm", "_inwgt", "_occup08", "_marst", "_diplom","_age", "h5","j1.1.1", "j1.1.2", "j1.1.3", "j1.1.4", "j1", "j2cod08", "j4.1", "j6", "i4", "j8", "j8.1", 
             
 #"j8.2", "j8.3", - produce too many NAs
-"j13", "j13.2", "j26", "j29c.1", "j29c.2", "j22", "j31", "j32", "j72.173", "m3", "id_h", "j10", 
+"j13", "j13.2", "j26", "j29c.1", "j29c.2", "j22", "j31", "j32", "j72.173", "m3", "id_h", "j10",
+
+"j29.2.1", "j29.2.3", "j60.5a", "j62", #"j61", "j29",
  
 # from the dataset on households            
                        
@@ -90,6 +94,9 @@ varlabel = c("АДРЕС РЕПРЕЗЕНТАТИВНОЙ ВЫБОРКИ?", "П�
 #"Сколько часов Вы фактически занимались этой работой дома в течение последних 30 дней?", "Скажите, пожалуйста, Вы учитывали эти часы, когда называли общую продолжительность рабочего времени за последние 30 дней?",  
 "Сколько человек работает на Вашем предприятии? Если не знаете точно, скажите примерно", "За последние 12 месяцев какова была Ваша среднемесячная зарплата на этом предприятии после вычета налогов - независимо от того, платят Вам ее вовремя или нет?", "А Вы лично являетесь владельцем или совладельцем предприятия, на котором Вы работаете?", "В какой степени Вы доверяете руководству Вашего предприятия, организации?", "В какой степени Вы доверяете людям, с которыми Вы вместе работаете, Вашим коллегам?", "Представьте себе не очень приятную картину: предприятие, где Вы работаете, по каким-то причинам закроется, и все работники будут уволены. Насколько Вы уверены в том, что
 сможете найти работу не хуже той, на которой работаете сейчас?", "Насколько Вас беспокоит то, что Вы можете потерять работу?", "У Вас есть еще какая-нибудь работа?", "Сколько у Вас детей моложе 18 лет?", "Как Вы оцениваете Ваше здоровье?", "ИДЕНТИФИКАЦИОННАЯ ПЕРЕМЕННАЯ 28-го РАУНДА", "Сколько денег в течение последних 30 дней Вы получили по основному месту работы после вычета налогов и отчислений? Если все или часть денег Вы получили в иностранной валюте, переведите все в рубли и назовите общую сумму",
+
+"После ноября прошлого года Вы продвинулись по службе, получили более высокую должность?", "После ноября прошлого года Вы перешли на более низкую должность?", "Как изменилось материальное положение Вашей семьи за последние 12 месяцев?", "Представьте себе лестницу из 9 ступеней, где на нижней, первой ступени, стоят нищие, а на высшей, девятой - богатые. На какой из девяти ступеней находитесь сегодня Вы лично?", 
+# "Как Вы думаете, через 12 месяцев Вы и Ваша семья будете жить лучше или хуже, чем сегодня?", "Как Вы считаете, на этой работе Вы занимаетесь предпринимательской деятельностью?",
 
 # from the dataset on households
 
@@ -106,8 +113,8 @@ for (filename in c("data2017", "data2018", "data2019", "data2020")) {
   
    assign(paste0("origvars", get_year(filename)), # output dataframe is origvars[year]
           
-          data.frame(varname = c(paste0(get_letter(filename), varname), "region"), varlabel =  c(varlabel, "Регион"))
-          ) # region is separate - does not vary depending on the wave
+          data.frame(varname = c(paste0(get_letter(filename), varname), "region", "idind"), varlabel =  c(varlabel, "Регион", "Единый идентификационный номер индивида для волн 5 и последующих"))
+          ) # region, idind are separate - do not vary depending on the wave
   
 }
 ```
@@ -118,18 +125,19 @@ for (filename in c("data2017", "data2018", "data2019", "data2020")) {
   
   # Selecting only necessary columns
   assign(filename, 
-          subset(get(filename), select=get(paste0("origvars", get_year(filename)))[["varname"]])
+         subset(get(paste0("join", get_year(filename))),
+                select=get(paste0("origvars", get_year(filename)))[["varname"]])
           )
-  # ^^^ works just as e.g. data2019 <- subset(data2019, select = origvars2019[["varname"]])
+  # ^^^ works just as e.g. data2019 <- subset(join2019, select = origvars2019[["varname"]])
   # only in a general way
   
   # More tidying up and replacing "ЗАТРУДНЯЮСЬ ОТВЕТИТЬ", "НЕТ ОТВЕТА", "ОТКАЗ ОТ ОТВЕТА" with NA
-  assign(filename, get(filename) %>% remove_val_labels() %>% na_if(99999996) %>% na_if(99999997) %>% na_if(99999998) %>% na_if(99999999) %>% na.omit()
-         ) # omitting NA
+  assign(filename, get(filename) %>% remove_val_labels() %>% na_if(99999996) %>% na_if(99999997) %>% na_if(99999998) %>% na_if(99999999)
+         ) #%>% na.omit()) # omitting NA
 
   
   # Converting to factor or numeric
-  num_vec = paste0(get_letter(filename), c("_age", "j13.2", "j13", "j8", "j72.173", "_inwgt", "_hhwgt", "f14", "j10", "j60", "j5a", "j5b", "h7.2"))
+  num_vec = c(paste0(get_letter(filename), c("_age", "j13.2", "j13", "j8", "j72.173", "_inwgt", "_hhwgt", "f14", "j10", "j60", "j5a", "j5b", "h7.2")), "idind")
   fac_vec = setdiff(get(paste0("origvars", get_year(filename)))[["varname"]], num_vec)
   df <- get(filename)
   df[num_vec] <- lapply(get(filename)[num_vec],as.numeric)
@@ -137,7 +145,7 @@ for (filename in c("data2017", "data2018", "data2019", "data2020")) {
   
   # Further working with df to beautify data
   
-  df = df %>% rename_with(.fn = ~c("origsm", "inwgt", "occup08","marst","diplom", "age", "h5", "sat_job", "sat_con", "sat_pay", "sat_prom", "jstat", "jcode08", "industry", "j6", "i4", "j8", "j8_1", "j13", "j13_2", "j26", "j29c_1", "j29c_2", "j22", "j31", "j32", "children", "m3", "id_h", "j10", "hhwgt", "c1", "f14", "j11", "j11_1", "j21_3", "j23", "j5a", "j5b", "j60", "h7_2")
+  df = df %>% rename_with(.fn = ~c("origsm", "inwgt", "occup08","marst","diplom", "age", "h5", "sat_job", "sat_con", "sat_pay", "sat_prom", "jstat", "jcode08", "industry", "j6", "i4", "j8", "j8_1", "j13", "j13_2", "j26", "j29c_1", "j29c_2", "j22", "j31", "j32", "children", "m3", "id_h", "j10", "j29_2_1", "j29_2_3", "j60_5a", "econrank", "hhwgt", "c1", "f14", "j11", "j11_1", "j21_3", "j23", "j5a", "j5b", "j60", "h7_2")
                           , .cols = paste0(get_letter(filename), varname))
   
   # Dependent variables are ordered
@@ -280,22 +288,75 @@ for (filename in c("data2017", "data2018", "data2019", "data2020")) {
   ### tenuresq
   df = df %>% mutate(tenuresq = df$tenure^2)
   
+  ### year
+  df['year'] = as.numeric(get_year(filename))
+  
+  ### fin_situation
+  # three-point, ?maybe five
+  df = df %>% mutate(fin_situation = case_when(df$j60_5a == 1 | df$j60_5a == 2 ~ "improved", df$j60_5a == 3 ~ "stayed the same", TRUE ~ "worsened"))
+  
+  ### promoted
+  df = df %>% mutate(promoted = case_when(df$j29_2_1 == 1 ~ 1, TRUE ~ 0))
+  
+  ### demoted
+  df = df %>% mutate(demoted = case_when(df$j29_2_3 == 1 ~ 1, TRUE ~ 0))
+  
+  ### econrank left as 9-point ladder
+  
+  
+  
+  # Creating a dataframe with NAs omitted from job satisfaction measures and replaced to mean for all the others (but what to do with categorical? replace with mode? Will unbalance the dataset, because NaNs in many rows...)
+  # df = df %>% drop_na(sat_job, sat_pay, sat_prom, sat_con)
+  #...
   
   df = na.omit(df)
   df <- filter(df, origsm == 1)
 
   assign(filename, df)
   
+  # Splitting data[year] into male and female
+  assign(paste0("m", get_year(filename)), filter(df, male == 1))
+  assign(paste0("f", get_year(filename)), filter(df, male == 0))
+  
   origdf <- get(paste0("origvars", get_year(filename)))
-  origdf$newname <- c("origsm", "inwgt", "occupation","marital","educ", "age", "male", "sat_job", "sat_con", "sat_pay", "sat_prom", "jstat", "jcode08", "industry", "supervisor", "nationality", "log_hours", "at_home", "est_size", "log_avgincome", "owner", "emp_trust", "col_trust", "job_search", "job_lose", "other_job", "children", "health", "id_h", "log_lastincome", "hhwgt", "renter", "f14", "j11", "contract", "hazardous", "govt", "tenure", "tenure", "log_totincome", "h7_2", "region")
+  origdf$newname <- c("origsm", "inwgt", "occupation","marital","educ", "age", "male", "sat_job", "sat_con", "sat_pay", "sat_prom", "jstat", "jcode08", "industry", "supervisor", "nationality", "log_hours", "at_home", "est_size", "log_avgincome", "owner", "emp_trust", "col_trust", "job_search", "job_lose", "other_job", "children", "health", "id_h", "log_lastincome", "promoted", "demoted", "fin_situation", "econrank", "hhwgt", "renter", "f14", "j11", "contract", "hazardous", "govt", "tenure", "tenure", "log_totincome", "h7_2", "region", "idind")
+  
+  origdf = origdf %>% add_row(varname = "year", varlabel = "Год", newname = "year")
   
   # agesq, age_bins - see age
   # tenuresq - see tenure
   
   assign(paste0("origvars", get_year(filename)), origdf)
   
+  
     
 }
+```
+
+
+```{r}
+# Making panels
+upanel = dplyr::bind_rows(data2017, data2018, data2019, data2020)
+bpanel = upanel %>% group_by(idind) %>% filter(n() == 4)
+# To see that there are really 4 observations of each: View(bpanel[order(bpanel$idind),])
+
+umpanel = dplyr::bind_rows(m2017, m2018, m2019, m2020)
+ufpanel = dplyr::bind_rows(f2017, f2018, f2019, f2020)
+
+bmpanel = umpanel %>% group_by(idind) %>% filter(n() == 4)
+bfpanel = ufpanel %>% group_by(idind) %>% filter(n() == 4)
+```
+
+
+```{r}
+sort(colSums(is.na(upanel)))
+```
+
+```{r}
+table(data2020$children)
+```
+```{r}
+sum(is.na(data2020$children))
 ```
 
 
@@ -317,6 +378,212 @@ for (filename in c("data2017", "data2018", "data2019", "data2020")) {
 
 
 ```{r}
-# Do descriptive stats
+# Total panel
+# IND
+IND=read_dta(file.choose())
+# HH
+HH=read_dta(file.choose())
+```
+
+```{r}
+joinw2016 = merge(x = IND, y = HH, by = c("ID_H", "ID_W")) 
+
+joinw2016 = joinw2016 %>% remove_val_labels() %>% remove_var_label() %>% zap_formats() %>% na_if(99999996) %>% na_if(99999997) %>% na_if(99999998) %>% na_if(99999999)
+
+names(joinw2016) <- tolower(names(joinw2016))
+
+# j61, j29
+joinw2016 <- subset(joinw2016, select = -c(j61, j29))
+
+# Converting to factor or numeric
+num_vec = c("age", "j13_2", "j13", "j8", "j72_173", "inwgt", "hhwgt", "f14", "j10", "j60", "j5a", "j5b", "h7_2", "idind", "year", "redid_h")
+fac_vec = setdiff(colnames(joinw2016), num_vec)
+df <- get("joinw2016")
+#df[num_vec] <- lapply(get(filename)[num_vec],as.numeric)
+df[fac_vec] <- lapply(df[fac_vec],as.factor)
+
+# Further working with df to beautify data
+  
+df = df %>% rename_with(.fn = ~c("sat_job", "sat_con", "sat_pay", "sat_prom", "jstat", "jcode08", "industry", "children", "econrank"), .cols = c("j1_1_1",  "j1_1_2", "j1_1_3",  "j1_1_4", "j1", "j2cod08", "j4_1", "j72_173", "j62"))
+
+
+# Dependent variables are ordered
+  
+df[["sat_job"]] <- ordered(df[["sat_job"]],c(1,2,3,4,5))
+df[["sat_con"]] <- ordered(df[["sat_con"]],c(1,2,3,4,5))
+df[["sat_pay"]] <- ordered(df[["sat_pay"]],c(1,2,3,4,5))
+df[["sat_prom"]] <- ordered(df[["sat_prom"]],c(1,2,3,4,5))
+
+# Creating appropriate regressors
+
+### male
+df = df %>% mutate(male = case_when(df$h5 == 1 ~ 1, TRUE ~ 0))
+
+### educ
+df = df %>% mutate(educ = case_when(df$diplom == 6 ~ "High", df$diplom == 4|df$diplom == 5 ~ "Medium", TRUE ~ "Low"))
+
+df$educ <- factor(df$educ, levels = c("Low", "Medium", "High"))
+
+### health
+df = df %>% mutate(health = case_when(df$m3 == 1 ~ "Excellent", df$m3 == 2 ~ "Good", TRUE ~ "Fair to very poor"))
+
+df$health <- factor(df$health, levels = c("Fair to very poor", "Good", "Excellent"))
+
+### agesq
+df = df %>% mutate(agesq = df$age^2)
+
+### age_bins - just in case
+df = df %>% mutate(age_bins = case_when(df$age >= 16 & df$age <= 19 ~ "16-19", df$age >= 20 & df$age <= 29 ~ "20-29", df$age >= 30 & df$age <= 39 ~ "30-39", df$age >= 40 & df$age <= 49 ~ "40-49", df$age >= 50 & df$age <= 59 ~ "50-59", TRUE ~ "60+"))
+
+df$age_bins <- factor(df$age_bins, levels=c("60+", "16-19", "20-29", "30-39", "40-49", "50-59"))
+
+### marital
+df = df %>% mutate(marital = case_when(df$marst == 2 ~ "Married", df$marst == 3 ~ "Cohabiting", df$marst == 5 ~ "Widowed", df$marst == 4 ~ "Divorced", df$marst == 6 ~ "Separated",TRUE ~ "Never married"))
+
+df$marital <- factor(df$marital, levels=c("Never married", "Separated", "Divorced", "Widowed", "Cohabiting", "Married"))
+
+### renter
+df = df %>% mutate(renter = case_when(df$c1 == 2 | df$c1 == 3 ~ 1, TRUE ~ 0))
+
+### log_avgincome
+### j13_2 is average monthly income
+df = df %>% mutate(log_avgincome = case_when(j13_2 != 0 ~ log(df$j13_2), TRUE ~ NA_real_))
+
+### log_lastincome
+### j10 is income over the last 30 days at the time of the survey
+df = df %>% mutate(log_lastincome = case_when(j10 != 0 ~ log(df$j10), TRUE ~ NA_real_))
+
+### log_totincome
+### j60 is is total income over the last 30 days at the time of the survey
+df = df %>% mutate(log_totincome = case_when(j60 != 0 ~ log(df$j60), TRUE ~ NA_real_))
+
+### log_hhincome
+### f14 is is household income over the last 30 days at the time of the survey
+df = df %>% mutate(log_hhincome = case_when(f14 != 0 ~ log(df$f14), TRUE ~ NA_real_))
+
+### othincome
+### wanted to find out the household income except the person's contribution
+### some are zero => can't take log, will be denoted as NA, and a few are < 0
+# df = df %>% mutate(othincome = data2019$f14 - data2019$j10)
+
+# log_othincome
+# df = df %>% mutate(log_othincome = case_when(othincome > 0 ~ log(df$othincome), TRUE ~ NA_real_))
+
+
+### log_hours
+df = df %>% mutate(log_hours = case_when(j8 != 0 ~ log(df$j8), TRUE ~ NA_real_))
+
+### supervisor (presence of subordinates, supervisory responsibilities)
+df = df %>% mutate(supervisor = case_when(df$j6 == 1 ~ 1, TRUE ~ 0))
+
+### occupation
+df = df %>% mutate(occupation = case_when(df$occup08 == 0 ~ "Military", df$occup08 == 1 ~ "Manager", df$occup08 == 2 ~ "HighProfessional", df$occup08 == 3 ~ "MidProfessional", df$occup08 == 7 ~ "SkilledManual", df$occup08 == 8 ~ "MachineOperative", df$occup08 == 6 ~ "SkilledAgricultural", df$occup08 == 5 ~ "Sales", df$occup08 == 4 ~ "Clerical&Services", TRUE ~ "Unskilled"))
+
+df$occupation <- factor(df$occupation, levels=c("Unskilled", "Military", "Manager", "HighProfessional", "MidProfessional", "SkilledManual", "MachineOperative", "SkilledAgricultural", "Sales", "Clerical&Services"))
+
+### est_size
+df = df %>% mutate(est_size = case_when(df$j13 <= 24 ~ "1-24", df$j13 > 24 & df$j13 <= 199 ~ "25-199", TRUE ~ "200+"))
+
+df$est_size <- factor(df$est_size, levels=c("200+", "1-24", "25-199"))
+
+### contract
+df = df %>% mutate(contract = case_when(df$j11_1 == 1 ~ 1, TRUE ~ 0))
+
+### hazardous
+df = df %>% mutate(hazardous = case_when(df$j21_3 == 1 ~ 1, TRUE ~ 0))
+
+### govt
+df = df %>% mutate(govt = case_when(df$j23 == 1 ~ 1, TRUE ~ 0))
+
+### at_home
+df = df %>% mutate(at_home = case_when(df$j8_1 == 1 ~ 1, TRUE ~ 0))
+
+### owner
+df = df %>% mutate(owner = case_when(df$j26 == 1 ~ 1, TRUE ~ 0))
+
+### other_job
+df = df %>% mutate(other_job = case_when(df$j32 == 1 ~ 1, TRUE ~ 0))
+
+### emp_trust
+df = df %>% mutate(emp_trust = case_when(df$j29c_1 == 1 ~ "Fully trust", df$j29c_1 == 2 ~ "Somewhat trust", df$j29c_1 == 3 ~ "In equal measure", df$j29c_1 == 4 ~ "Distrust", TRUE ~ "Not at all"))
+
+df$emp_trust <- factor(df$emp_trust, levels=c("Not at all", "Fully trust", "Somewhat trust", "In equal measure", "Distrust"))
+
+### col_trust
+df = df %>% mutate(col_trust = case_when(df$j29c_2 == 1 ~ "Fully trust", df$j29c_2 == 2 ~ "Somewhat trust", df$j29c_2 == 3 ~ "In equal measure", df$j29c_2 == 4 ~ "Distrust", TRUE ~ "Not at all"))
+
+df$col_trust <- factor(df$col_trust, levels=c("Not at all", "Fully trust", "Somewhat trust", "In equal measure", "Distrust"))
+
+### job_search
+df = df %>% mutate(job_search = case_when(df$j22 == 1 ~ "Very confident", df$j22 == 2 ~ "Somewhat confident", df$j22 == 3 ~ "In equal measure", df$j22 == 4 ~ "Somewhat uncertain", TRUE ~ "Very uncertain"))
+
+df$job_search <- factor(df$job_search, levels=c("Very uncertain", "Very confident", "Somewhat confident", "In equal measure", "Somewhat uncertain"))
+
+### job_lose
+df = df %>% mutate(job_lose = case_when(df$j31 == 1 ~ "Very much", df$j31 == 2 ~ "Somewhat", df$j31 == 3 ~ "In equal measure", df$j31 == 4 ~ "A little", TRUE ~ "Not at all"))
+
+df$job_lose <- factor(df$job_lose, levels=c("Not at all", "Very much", "Somewhat", "In equal measure", "A little"))
+
+### region 
+# check levels(data20[17/18/19/20]$region)
+# in 2020: 28 people from "200"
+# in 2017/18: 14/17 people from region "140" - merge New Moscow with Moscow?
+# might do region dummies without renaming to legibility
+
+
+### nationality
+# didn't do for now, there are some weird values in the codebook
+# might do "Russian" dummy? Or Russia/Ukraine/Belarus/other?
+
+### industry
+# might do industry dummies without renaming to legibility
+# & write up variable definitions in Appendix
+
+
+### tenure
+df = df %>% mutate(tenure = (interval(make_date(year = df$j5a, month = df$j5b, 1), make_date(year = case_when(df$h7_2 == 1 ~ as.numeric(get_year(filename)) + 1, TRUE ~ as.numeric(get_year(filename))), df$h7_2, 1))  %/% months(1)))
+
+
+### tenuresq
+df = df %>% mutate(tenuresq = df$tenure^2)
+
+### year
+# df['year'] = as.numeric(get_year(filename))
+
+### fin_situation
+# three-point, ?maybe five
+df = df %>% mutate(fin_situation = case_when(df$j60_5a == 1 | df$j60_5a == 2 ~ "improved", df$j60_5a == 3 ~ "stayed the same", TRUE ~ "worsened"))
+
+### promoted
+df = df %>% mutate(promoted = case_when(df$j29_2_1 == 1 ~ 1, TRUE ~ 0))
+
+### demoted
+df = df %>% mutate(demoted = case_when(df$j29_2_3 == 1 ~ 1, TRUE ~ 0))
+
+### econrank left as 9-point ladder
+
+### expect
+# three-point, ?maybe five
+# df = df %>% mutate(expect_3 = case_when(df$j61 == 1 | df$j61 == 2 ~ "better", df$j61 == 3 ~ "the same", TRUE ~ "worse"))
+
+#df = df %>% mutate(expect_5 = case_when(df$j61 == 1 ~ "much better", df$j61 == 2 ~ "somewhat better", df$j61 == 3 ~ "the same", df$j61 == 4 ~ "somewhat worse", TRUE ~ "worse"))
+
+### entrepreneur
+#df = df %>% mutate(entrepreneur = case_when(df$j29 == 1 ~ 1, TRUE ~ 0))
+
+
+df = na.omit(df)
+df <- filter(df, origsm == 1)
+
+assign("joinw2016", df)
+```
+
+
+```{r}
+join = filter(joinw2016, year != 2016)
+```
+
+```{r}
+sort(colSums(is.na(join)))
 ```
 
