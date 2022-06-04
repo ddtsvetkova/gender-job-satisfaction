@@ -1,3 +1,4 @@
+theme: primer
 markdown: kramdown
 highlighter: rouge
 kramdown:
