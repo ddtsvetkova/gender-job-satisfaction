@@ -2,7 +2,6 @@ remote_theme: pages-themes/primer
 plugins:
 - jekyll-remote-theme # add this line to the plugins list if you already have one
 markdown: kramdown
-highlighter: rouge
 kramdown:
   input: GFM
   syntax_highlighter: rouge
