@@ -1,6 +1,4 @@
-remote_theme: pages-themes/primer
-plugins:
-- jekyll-remote-theme # add this line to the plugins list if you already have one
+theme: primer
 # Jekyll 3 now only supports Kramdown for Markdown
 kramdown:
     # Use GitHub flavored markdown, including triple backtick fenced code blocks
