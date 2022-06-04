@@ -1,7 +1,7 @@
 # Who is more satisfied at work: women or men? Gender differences in job satisfaction in Russia.
 
 
-```stata
+{% highlight stata %}
 
 * Working with the data set on individuals
 use "INSERT YOUR PATH HERE\USER_RLMS-HSE_IND_1994_2020_v4_rus.dta"
@@ -30,8 +30,8 @@ tab ID_W, nolabel
 * save "D:\Dasha's\HSE\3 курс\Курсовая\new_hh.dta", replace
 
 * use "D:\Dasha's\HSE\3 курс\Курсовая\new_ind.dta", clear
-```
+{% endhighlight %}
 
-```r
+{% highlight r %}
 X %>% dplyr::mutate()
-```
+{% endhighlight %}
