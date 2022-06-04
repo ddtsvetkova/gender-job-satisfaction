@@ -1,7 +1,7 @@
 ---
 ---
 
-@import "{{ site.theme }}";
+@import "jekyll-theme-primer";
 
 .highlight .hll { background-color: #ffffcc }
 .highlight  { background: #ffffff; }
