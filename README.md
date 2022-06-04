@@ -30,7 +30,7 @@ tab ID_W, nolabel
 * save "D:\Dasha's\HSE\3 курс\Курсовая\new_hh.dta", replace
 
 * use "D:\Dasha's\HSE\3 курс\Курсовая\new_ind.dta", clear
-```
+```{:.language-stata}
 
 ```r
 X %>% dplyr::mutate()
