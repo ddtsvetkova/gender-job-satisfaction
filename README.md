@@ -2,6 +2,7 @@
 
 
 ```stata
+
 * Working with the data set on individuals
 use "INSERT YOUR PATH HERE\USER_RLMS-HSE_IND_1994_2020_v4_rus.dta"
 
